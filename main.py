@@ -20,7 +20,7 @@ def extract_metadata(image):
     return metadata
 
 # Image info
-def get_image_info(image, file=None):
+def get_image_info(image):
     width, height = image.size
     info = {
         "format": image.format,
@@ -28,10 +28,6 @@ def get_image_info(image, file=None):
         "width": width,
         "height": height
     }
-    if file:
-        info["filename"] = file.filename
-        info["size_kb"] = round(len(file.read()) / 1024, 2)
-        file.seek(0)
     return info
 
 @app.route('/')
