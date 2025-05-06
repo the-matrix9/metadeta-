@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify
 from PIL import Image, ExifTags
-import pytesseract
 import requests
-from io import BytesIO
 import time
-import base64
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -20,13 +18,6 @@ def extract_metadata(image):
     except Exception as e:
         metadata["error"] = str(e)
     return metadata
-
-# Extract text using OCR
-def extract_text(image):
-    try:
-        return pytesseract.image_to_string(image)
-    except Exception as e:
-        return str(e)
 
 # Image info
 def get_image_info(image, file=None):
@@ -46,37 +37,13 @@ def get_image_info(image, file=None):
 @app.route('/')
 def docs():
     return jsonify({
-        "API": "Image Metadata & Text Extractor",
+        "API": "Image Metadata Extractor",
         "routes": {
             "/": "Show API docs",
-            "/image": "POST image file (form-data) → metadata + OCR text + info",
-            "/url": "POST JSON { 'url': 'http://...jpg' } → same",
-            "/base64": "POST JSON { 'base64': '...' } → same"
+            "/url": "POST JSON { 'url': 'http://...jpg' } → metadata"
         },
         "developer": "t.me/AnshAPi",
         "version": "v2.0"
-    })
-
-@app.route('/image', methods=['POST'])
-def from_image():
-    start = time.time()
-
-    if 'image' not in request.files:
-        return jsonify({"error": "No image uploaded", "developer": "t.me/AnshAPi"}), 400
-    
-    file = request.files['image']
-    image = Image.open(file.stream)
-
-    metadata = extract_metadata(image)
-    text = extract_text(image)
-    info = get_image_info(image, file)
-
-    return jsonify({
-        "image_info": info,
-        "metadata": metadata,
-        "text_extracted": text.strip(),
-        "response_time_ms": round((time.time() - start) * 1000, 2),
-        "developer": "t.me/AnshAPi"
     })
 
 @app.route('/url', methods=['POST'])
@@ -94,39 +61,11 @@ def from_url():
         return jsonify({"error": f"Image fetch failed: {str(e)}", "developer": "t.me/AnshAPi"}), 400
 
     metadata = extract_metadata(image)
-    text = extract_text(image)
     info = get_image_info(image)
 
     return jsonify({
         "image_info": info,
         "metadata": metadata,
-        "text_extracted": text.strip(),
-        "response_time_ms": round((time.time() - start) * 1000, 2),
-        "developer": "t.me/AnshAPi"
-    })
-
-@app.route('/base64', methods=['POST'])
-def from_base64():
-    start = time.time()
-
-    data = request.get_json()
-    if not data or 'base64' not in data:
-        return jsonify({"error": "No base64 data provided", "developer": "t.me/AnshAPi"}), 400
-    
-    try:
-        image_data = base64.b64decode(data['base64'])
-        image = Image.open(BytesIO(image_data))
-    except Exception as e:
-        return jsonify({"error": f"Base64 decode failed: {str(e)}", "developer": "t.me/AnshAPi"}), 400
-
-    metadata = extract_metadata(image)
-    text = extract_text(image)
-    info = get_image_info(image)
-
-    return jsonify({
-        "image_info": info,
-        "metadata": metadata,
-        "text_extracted": text.strip(),
         "response_time_ms": round((time.time() - start) * 1000, 2),
         "developer": "t.me/AnshAPi"
     })
